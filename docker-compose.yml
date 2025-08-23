@@ -1,0 +1,58 @@
+services:
+  #resume_nginx:
+  #  image: nginx:latest
+  #  ports:
+  #    - "8080:80"
+  #    - "443:443"
+  #  volumes:
+  #    - ./nginx.conf:/etc/nginx/nginx.conf
+  #    - ./staticfiles:/code/static
+  #    - /home/me/self-signed/fullchain.pem:/etc/ssl/certs/fullchain.pem  # SSL certificate
+  #    - /home/me/self-signed/privkey.pem:/etc/ssl/private/privkey.pem  # SSL key
+  #  networks:
+  #    - resume_network
+
+  resume_backend:
+    container_name: "resume-backend"
+    build: ./backend
+    ports:
+      - "8000:8000"
+    env_file: ./.secrets/backend/.env
+    depends_on:
+      - resume_postgres
+    networks:
+      - resume_network
+
+
+  resume_postgres:
+    image: postgres:16.1
+    container_name: "resume-postgres"
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
+      - POSTGRES_DB=resumedb
+    ports:
+      - "5861:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - resume_network
+
+  resume_frontend:
+    build: ./frontend
+    container_name: "resume-frontend"
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+    networks:
+      - resume_network
+
+
+volumes:
+  postgres_data:
+
+networks:
+  resume_network:
+    driver: bridge
